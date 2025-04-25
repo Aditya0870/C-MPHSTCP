@@ -1,0 +1,18 @@
+If ACK is received:
+    if cwnd < 38:
+        alpha = 1           // Normal TCP Reno behavior
+        beta = 0.5
+    else:
+        // Use lookup table to get alpha value based on the cwnd
+        alpha = lookupAlpha(cwnd)
+
+    // Increase cwnd based on alpha
+    cwnd = cwnd + (alpha / cwnd)
+
+If packet loss is detected:
+    // Reduce cwnd by factor beta (less aggressive than TCP Reno)
+    // Use lookup table to get beta value based on the cwnd
+    beta = lookupBeta(cwnd)
+
+    // Maintain cwnd based on beta value
+    cwnd = cwnd * beta

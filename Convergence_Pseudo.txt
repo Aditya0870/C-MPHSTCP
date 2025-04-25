@@ -1,0 +1,36 @@
+On packet loss:
+
+  If cwnd ≤ W_low:
+    beta value = 0.5        // Use standard TCP backoff
+    numDec = 0
+
+  Else:
+    If W_prev_max > cwnd:     // cwnd is decreasing
+      numDec = numDec + 1
+
+      If (numDec ≥ N1) AND ((W_prev_max - cwnd) ≥ S):
+        beta = 0.5                // Apply aggressive backoff
+        W_prev_max = 0
+        W_prev_min = 0
+        numDec = 0
+
+      Else:
+        b = HS_TCP_b(cwnd)     // Use default HighSpeed backoff
+        W_prev_min = cwnd
+
+        If numDec == N2:
+          W_prev_max = cwnd    // Refresh window max
+          numDec = 0
+
+    Else:                      // cwnd is stable or increasing
+      b = HS_TCP_b(cwnd)
+      W_prev_max = cwnd
+      W_prev_min = cwnd
+      numDec = 0
+
+// Update the value of the cwnd finally
+cwnd = cwnd*(1 - beta_value)
+
+
+"For our mechanism, N1, N2, and S were set to 2, 10, and W_prev_max/32, respectively.
+The maximum and minimum values of S were limited to 200 and 50, respectively."​
