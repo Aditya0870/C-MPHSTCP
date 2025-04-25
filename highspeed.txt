@@ -1,18 +1,12 @@
-If ACK is received:
-    if cwnd < 38:
-        alpha = 1           // Normal TCP Reno behavior
-        beta = 0.5
-    else:
-        // Use lookup table to get alpha value based on the cwnd
-        alpha = lookupAlpha(cwnd)
+void TcpHighSpeedCustom::IncreaseWindow(Ptr<TcpSocketState> tcb, uint32_t segmentsAcked) {
+    if (segmentsAcked == 0) return;
 
-    // Increase cwnd based on alpha
-    cwnd = cwnd + (alpha / cwnd)
+    double alpha = (tcb->GetCwndInSegments() < 38) ? 1.0 : LookupAlpha(tcb->GetCwndInSegments());
+    double increment = alpha / tcb->GetCwndInSegments();
+    tcb->m_cWnd += tcb->m_segmentSize * increment;
+}
 
-If packet loss is detected:
-    // Reduce cwnd by factor beta (less aggressive than TCP Reno)
-    // Use lookup table to get beta value based on the cwnd
-    beta = lookupBeta(cwnd)
-
-    // Maintain cwnd based on beta value
-    cwnd = cwnd * beta
+uint32_t TcpHighSpeedCustom::GetSsThresh(Ptr<const TcpSocketState> tcb, uint32_t /*bytesInFlight*/) {
+    double beta = LookupBeta(tcb->GetCwndInSegments());
+    return static_cast<uint32_t>(tcb->m_cWnd * beta);
+}

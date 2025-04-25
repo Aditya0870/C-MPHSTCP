@@ -1,31 +1,25 @@
-For each subflow path_i during congestion control:
+for (each subflow path_i) {
+    double Ri = (lp_max / pow(RTT_min, 2)) / (lp_i / pow(RTT_i, 2));
 
-  //First compute the path quality
-  R_i = (lp_max / RTT_min^2) / (lp_i / RTT_i^2)
+    if (Ri > Threshold) {
+        Mark path_i as BAD_PATH;
+        path_i->cwnd = min_cwnd;
+        path_i->ssthresh = min_cwnd;
+    } else {
+        Unmark path_i;
+    }
+}
 
-  //Then classify the paths based on this
-  If R_i > Threshold:
-    Mark path_i as BAD_PATH
-
-    // Suppress the path's aggressiveness
-    snd_cwnd_i = min_cwnd
-    ss_thresh_i = snd_cwnd_i
-
-  Else:
-    Unmark path_i (restore its normal behavior)
 
 --------------------------------------------------
 
-During packet scheduling:
+for (each path_i) {
+    if (isBadPath(path_i)) {
+        retransmitOnFastestGoodPath(packets_assigned_to(path_i));
+    } else {
+        sendNormally(path_i);
+    }
+}
 
-  For each path_i:
-
-    If path_i is marked as BAD_PATH:
-      // Replicate packets assigned to bad path
-      Retransmit those packets via the fastest GOOD_PATH
-
-    Else:
-      // Transmit as usual
-      Schedule packets normally
 
 Practical Range is [1.5,3]

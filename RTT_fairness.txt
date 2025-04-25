@@ -1,13 +1,5 @@
-On each ACK:
-
-  If cwnd > RTT_fairness_threshold:
-      rtt_ratio = RTT_current / RTT_min_seen
-
-      //We can also include fairness factor which for now we will consider 1
-      rtt_scaling = 1 / (rtt_ratio ^ fairness_factor)
-
-      new_alpha = alpha * rtt_scaling
-  Else:
-      new_alpha = alpha  // standard HighSpeed behavior
-
-  cwnd = cwnd + (new_alpha / cwnd)
+if (cwnd > m_rttFairnessThreshold) {
+    double rttRatio = currentRtt.GetSeconds() / minRtt.GetSeconds();
+    double rttScaling = 1.0 / std::pow(rttRatio, 1.0);  // fairness_factor = 1
+    alpha *= rttScaling;
+}

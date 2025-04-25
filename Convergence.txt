@@ -1,36 +1,29 @@
-On packet loss:
+if (cwnd <= m_wLow) {
+    m_numDec = 0;
+    return tcb->m_cWnd * 0.5;
+}
 
-  If cwnd ≤ W_low:
-    beta value = 0.5        // Use standard TCP backoff
-    numDec = 0
+if (m_wPrevMax > cwnd) {
+    m_numDec++;
 
-  Else:
-    If W_prev_max > cwnd:     // cwnd is decreasing
-      numDec = numDec + 1
+    double S = std::max(50.0, std::min(200.0, m_wPrevMax / 32.0));
 
-      If (numDec ≥ N1) AND ((W_prev_max - cwnd) ≥ S):
-        beta = 0.5                // Apply aggressive backoff
-        W_prev_max = 0
-        W_prev_min = 0
-        numDec = 0
-
-      Else:
-        b = HS_TCP_b(cwnd)     // Use default HighSpeed backoff
-        W_prev_min = cwnd
-
-        If numDec == N2:
-          W_prev_max = cwnd    // Refresh window max
-          numDec = 0
-
-    Else:                      // cwnd is stable or increasing
-      b = HS_TCP_b(cwnd)
-      W_prev_max = cwnd
-      W_prev_min = cwnd
-      numDec = 0
-
-// Update the value of the cwnd finally
-cwnd = cwnd*(1 - beta_value)
-
-
-"For our mechanism, N1, N2, and S were set to 2, 10, and W_prev_max/32, respectively.
-The maximum and minimum values of S were limited to 200 and 50, respectively."​
+    if (m_numDec >= m_N1 && (m_wPrevMax - cwnd) >= S) {
+        m_wPrevMax = 0;
+        m_wPrevMin = 0;
+        m_numDec = 0;
+        return tcb->m_cWnd * 0.5;
+    } else {
+        m_wPrevMin = cwnd;
+        if (m_numDec == m_N2) {
+            m_wPrevMax = cwnd;
+            m_numDec = 0;
+        }
+        return tcb->m_cWnd * LookupBeta(cwnd);
+    }
+} else {
+    m_wPrevMax = cwnd;
+    m_wPrevMin = cwnd;
+    m_numDec = 0;
+    return tcb->m_cWnd * LookupBeta(cwnd);
+}
