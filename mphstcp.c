@@ -1,32 +1,3 @@
-/* Multipath Bottleneck Bandwidth and RTT (MPBBR) congestion control
- *
- * MPBBR congestion control computes the sending rate based on the delivery
- * rate (throughput) estimated from ACKs. In a nutshell:
- *
- *   On each ACK, update our model of the network path:
- *      bottleneck_bandwidth = windowed_max(delivered / elapsed, 10 round trips)
- *      min_rtt = windowed_min(rtt, 10 seconds)
- *   pacing_rate = pacing_gain * bottleneck_bandwidth
- *   cwnd = max(cwnd_gain * bottleneck_bandwidth * min_rtt, 4)
- *
- * The core algorithm does not react directly to packet losses or delays,
- * although MPBBR may adjust the size of next send per ACK when loss is
- * observed, or adjust the sending rate if it estimates there is a
- * traffic policer, in order to keep the drop rate reasonable.
- *
- * MPBBR is described in detail in:
- *   "MPBBR: Congestion-Based Congestion Control",
- *   Neal Cardwell, Yuchung Cheng, C. Stephen Gunn, Soheil Hassas Yeganeh,
- *   Van Jacobson. ACM Queue, Vol. 14 No. 5, September-October 2016.
- *
- * There is a public e-mail list for discussing MPBBR development and testing:
- *   https://groups.google.com/forum/#!forum/mpbbr-dev
- *
- * NOTE: MPBBR *must* be used with the fq qdisc ("man tc-fq") with pacing enabled,
- * since pacing is integral to the MPBBR design and implementation.
- * MPBBR without pacing would not function properly, and may incur unnecessary
- * high packet loss rates.
- */
 #include <linux/module.h>
 #include <net/tcp.h>
 #include <linux/inet_diag.h>
@@ -35,12 +6,6 @@
 #include <linux/win_minmax.h>
 
 #include <net/mptcp.h>
-/* Scale factor for rate in pkt/uSec unit to avoid truncation in bandwidth
- * estimation. The rate unit ~= (1500 bytes / 1 usec / 2^24) ~= 715 bps.
- * This handles bandwidths from 0.06pps (715bps) to 256Mpps (3Tbps) in a u32.
- * Since the minimum window is >=4 packets, the lower bound isn't
- * an issue. The upper bound isn't an issue with existing technologies.
- */
 #define BW_SCALE 24
 #define BW_UNIT (1 << BW_SCALE)
 
